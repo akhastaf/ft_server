@@ -11,13 +11,15 @@ RUN apt-key fingerprint ABF5BD827BD9BF62
 
 RUN apt update && apt install -y nginx
 
+RUN apt install -y default-mysql-server default-mysql-client
+
 WORKDIR /run
 
 RUN mkdir php
 
-RUN apt install -y php7.3-fpm php7.3-mysql
+RUN openssl req -x509 -nodes -days 365 -subj "/C=CA/ST=QC/O=1337/CN=localhost" -addext "subjectAltName=DNS:localhost" -newkey rsa:2048 -keyout /etc/ssl/private/localhost.key -out /etc/ssl/certs/localhost.crt;
 
-CMD [ "service", "php7.3-fpm", "restart" ]
+RUN apt install -y php7.3-fpm php7.3-mysql php7.3-mbstring
 
 WORKDIR /etc/nginx
 
@@ -33,6 +35,11 @@ COPY ./srcs/wordpress ./wordpress/
 
 COPY ./srcs/phpMyAdmin ./phpMyAdmin/
 
-COPY ./srcs/index.php .
+RUN mkdir /var/www/phpMyAdmin/tmp
 
-CMD ["nginx", "-g", "daemon off;"]
+RUN chmod 777 /var/www*
+
+COPY ./srcs/start.sh  /start.sh
+RUN chmod +x /start.sh
+
+ENTRYPOINT ["/start.sh"]
